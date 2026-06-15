@@ -335,25 +335,40 @@ textarea{resize:vertical;min-height:80px}
 
       <!-- PUBLISH -->
       <div class="panel" id="panel-publish">
-        <div class="panel-header"><h1>Publish Changes</h1><p>Generate a data block and update your live site.</p></div>
+        <div class="panel-header"><h1>Publish to Live Site</h1><p>Push changes directly to GitHub — Vercel auto-deploys in ~20 seconds.</p></div>
+
         <div class="card">
-          <div class="card-header"><div><h2>How to Publish</h2></div></div>
-          <p style="font-size:13.5px;color:var(--gray);line-height:2">
-            <strong>Step 1</strong> — Click "Generate Code" below.<br/>
-            <strong>Step 2</strong> — Copy the generated code block.<br/>
-            <strong>Step 3</strong> — Open <code style="background:#f0f0ee;padding:2px 6px">index.html</code> in any text editor (Notepad, VS Code, etc).<br/>
-            <strong>Step 4</strong> — Find the line that says: <code style="background:#f0f0ee;padding:2px 6px">/* ADMIN DATA — paste below */</code><br/>
-            <strong>Step 5</strong> — Replace everything between that marker and <code style="background:#f0f0ee;padding:2px 6px">/* END ADMIN DATA */</code> with the copied code.<br/>
-            <strong>Step 6</strong> — Save the file and re-upload to Vercel.
-          </p>
-        </div>
-        <div class="card">
-          <div class="card-header"><div><h2>Generate Export Code</h2></div></div>
-          <button class="btn btn-primary" style="margin-bottom:16px" onclick="generateCode()">⚡ Generate Code Block</button>
-          <textarea id="exportCode" rows="16" style="font-family:monospace;font-size:11.5px;background:#f8f8f6;color:#333" placeholder="Click 'Generate Code' above to create your export..."></textarea>
-          <div class="btn-group" style="border:none;padding:0;margin-top:12px">
-            <button class="btn btn-success" onclick="copyCode()">📋 Copy Code</button>
+          <div class="card-header"><div><h2>GitHub Setup</h2><p>One-time configuration</p></div></div>
+          <div class="f-row">
+            <div><label>GitHub Username</label><input type="text" id="gh-user" placeholder="e.g. yashpundeer"/></div>
+            <div><label>Repository Name</label><input type="text" id="gh-repo" placeholder="e.g. czar-consultancy-website"/></div>
           </div>
+          <label>Personal Access Token <span style="font-weight:400;text-transform:none;letter-spacing:0">(ghp_... — stored only in this browser)</span></label>
+          <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxx"/>
+          <div class="btn-group">
+            <button class="btn btn-secondary" onclick="saveGHConfig()">💾 Save GitHub Config</button>
+            <button class="btn btn-secondary" onclick="testGHConnection()">🔗 Test Connection</button>
+          </div>
+          <p id="gh-status" style="margin-top:12px;font-size:13px;color:var(--gray)"></p>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div><h2>Publish Changes</h2><p>Pushes your saved changes to GitHub → Vercel auto-deploys</p></div></div>
+          <p style="font-size:13.5px;color:var(--gray);line-height:1.8;margin-bottom:20px">
+            Click the button below to push all your saved changes (services, team, jobs, homepage text, contact info) directly to your GitHub repo. Vercel will automatically redeploy your site within ~20 seconds.
+          </p>
+          <button class="btn btn-primary" style="font-size:15px;padding:14px 28px" onclick="publishToGitHub()">
+            🚀 Publish to Live Site
+          </button>
+          <div id="publishLog" style="margin-top:16px;font-size:12.5px;color:var(--gray);line-height:2;display:none"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div><h2>Deploy Status</h2></div></div>
+          <p style="font-size:13px;color:var(--gray);line-height:1.8">
+            After publishing, your site updates in <strong>~20 seconds</strong>. You can check the live deployment at:<br/>
+            <a id="vercel-link" href="#" target="_blank" style="color:var(--red);font-weight:600">your-site.vercel.app</a>
+          </p>
         </div>
       </div>
 
@@ -468,6 +483,138 @@ textarea{resize:vertical;min-height:80px}
 
 <script>
 // ══════════════════════════════════
+// GITHUB AUTO-PUBLISH
+// ══════════════════════════════════
+function saveGHConfig(){
+  const cfg = {
+    user: document.getElementById('gh-user').value.trim(),
+    repo: document.getElementById('gh-repo').value.trim(),
+    token: document.getElementById('gh-token').value.trim()
+  };
+  if(!cfg.user||!cfg.repo||!cfg.token){ setGHStatus('Please fill in all 3 fields.','red'); return; }
+  localStorage.setItem('czar_gh_config', JSON.stringify(cfg));
+  const link = document.getElementById('vercel-link');
+  link.href = `https://${cfg.repo}.vercel.app`;
+  link.textContent = `${cfg.repo}.vercel.app`;
+  setGHStatus('✓ Config saved in browser.','green');
+}
+
+function loadGHConfig(){
+  try{
+    const cfg = JSON.parse(localStorage.getItem('czar_gh_config')||'{}');
+    if(cfg.user) document.getElementById('gh-user').value = cfg.user;
+    if(cfg.repo) document.getElementById('gh-repo').value = cfg.repo;
+    if(cfg.token) document.getElementById('gh-token').value = cfg.token;
+    if(cfg.repo){
+      const link = document.getElementById('vercel-link');
+      link.href = `https://${cfg.repo}.vercel.app`;
+      link.textContent = `${cfg.repo}.vercel.app`;
+    }
+  }catch(e){}
+}
+
+function getGHConfig(){
+  try{ return JSON.parse(localStorage.getItem('czar_gh_config')||'{}'); }catch(e){ return {}; }
+}
+
+function setGHStatus(msg, color='gray'){
+  const el = document.getElementById('gh-status');
+  el.textContent = msg;
+  el.style.color = color==='green'?'#166534':color==='red'?'#b91c1c':'var(--gray)';
+}
+
+async function testGHConnection(){
+  const cfg = getGHConfig();
+  if(!cfg.token){ setGHStatus('Save your config first.','red'); return; }
+  setGHStatus('Testing connection...');
+  try{
+    const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}`,{
+      headers:{'Authorization':'token '+cfg.token,'Accept':'application/vnd.github.v3+json'}
+    });
+    if(res.ok){
+      const d = await res.json();
+      setGHStatus(`✓ Connected to: ${d.full_name}  (${d.private?'Private':'Public'} repo)`,'green');
+    } else {
+      setGHStatus(`✗ Error ${res.status} — check your token and repo name.`,'red');
+    }
+  }catch(e){ setGHStatus('✗ Network error: '+e.message,'red'); }
+}
+
+async function publishToGitHub(){
+  const cfg = getGHConfig();
+  if(!cfg.token||!cfg.user||!cfg.repo){
+    showLog('⚠️ Please fill in and save your GitHub config first.','red'); return;
+  }
+
+  showLog('📦 Reading current index.html from GitHub...','gray');
+
+  try{
+    // 1. Get current file SHA + content
+    const getRes = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/index.html`,{
+      headers:{'Authorization':'token '+cfg.token,'Accept':'application/vnd.github.v3+json'}
+    });
+    if(!getRes.ok){ showLog('✗ Could not read index.html from GitHub. Check config.','red'); return; }
+    const fileData = await getRes.json();
+    const sha = fileData.sha;
+    let content = atob(fileData.content.replace(/\n/g,''));
+
+    showLog('✏️ Injecting your admin changes...','gray');
+
+    // 2. Build the admin data block
+    const adminBlock = `/* ADMIN DATA — paste below */\nwindow.CZAR_ADMIN = ${JSON.stringify(data, null, 2)};\n/* END ADMIN DATA */`;
+
+    // 3. Replace the admin data section in the file
+    const startMarker = '/* ADMIN DATA — paste below */';
+    const endMarker   = '/* END ADMIN DATA */';
+    const startIdx = content.indexOf(startMarker);
+    const endIdx   = content.indexOf(endMarker) + endMarker.length;
+
+    if(startIdx === -1){
+      showLog('✗ Could not find admin data markers in index.html. Make sure you uploaded the latest version.','red');
+      return;
+    }
+
+    content = content.substring(0, startIdx) + adminBlock + content.substring(endIdx);
+
+    showLog('🚀 Pushing to GitHub...','gray');
+
+    // 4. Push updated file back to GitHub
+    const pushRes = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/index.html`,{
+      method:'PUT',
+      headers:{
+        'Authorization':'token '+cfg.token,
+        'Accept':'application/vnd.github.v3+json',
+        'Content-Type':'application/json'
+      },
+      body: JSON.stringify({
+        message: `Admin update: ${new Date().toLocaleString('en-IN')}`,
+        content: btoa(unescape(encodeURIComponent(content))),
+        sha: sha
+      })
+    });
+
+    if(pushRes.ok){
+      showLog('✅ Published successfully! Vercel is deploying now...\n⏱️ Your site will update in ~20 seconds.','green');
+      changeCount = 0;
+      updateStats();
+      document.getElementById('lastSaved').textContent = 'Published '+new Date().toLocaleTimeString();
+    } else {
+      const err = await pushRes.json();
+      showLog('✗ GitHub error: '+(err.message||pushRes.status),'red');
+    }
+  }catch(e){
+    showLog('✗ Error: '+e.message,'red');
+  }
+}
+
+function showLog(msg, color='gray'){
+  const el = document.getElementById('publishLog');
+  el.style.display = 'block';
+  el.style.color = color==='green'?'#166534':color==='red'?'#b91c1c':'var(--gray)';
+  el.textContent = msg;
+}
+
+// ══════════════════════════════════
 // AUTH
 // ══════════════════════════════════
 // Change this password to whatever you want
@@ -509,6 +656,7 @@ let changeCount = 0;
 
 function initAdmin(){
   loadStateFromStorage();
+  loadGHConfig();
   renderServiceList();
   renderTeamList();
   renderJobList();
