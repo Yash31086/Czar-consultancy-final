@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin Panel — Czar Consultancy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --red:#CC0000;--ink:#0D0D0D;--gray:#4A4A4A;--light:#F8F8F6;--line:#E5E5E5;
+  --green:#166534;--blue:#1e40af;--orange:#c2410c;
+  --ff:'Inter',system-ui,sans-serif;
+}
+body{font-family:var(--ff);background:#F0F0EE;color:var(--ink);min-height:100vh}
+
+/* ── LOGIN ── */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--ink)}
+.login-box{background:#fff;padding:48px;width:380px;border-top:4px solid var(--red)}
+.login-box .brand{display:flex;align-items:center;gap:12px;margin-bottom:36px}
+.login-box .brand img{height:44px;width:auto}
+.login-box .brand span{font-size:17px;font-weight:700;color:var(--ink)}
+.login-box h2{font-size:22px;font-weight:700;margin-bottom:6px}
+.login-box p{font-size:13px;color:var(--gray);margin-bottom:28px}
+.login-box input{width:100%;border:1px solid var(--line);padding:12px 14px;font-family:var(--ff);font-size:14px;outline:none;margin-bottom:14px}
+.login-box input:focus{border-color:var(--red)}
+.btn-login{width:100%;background:var(--red);color:#fff;border:none;padding:14px;font-family:var(--ff);font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.04em}
+.login-err{font-size:12px;color:var(--red);margin-top:8px;display:none}
+
+/* ── SHELL ── */
+#adminShell{display:none;min-height:100vh}
+.admin-nav{background:var(--ink);height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:100}
+.admin-nav .brand{display:flex;align-items:center;gap:10px;color:#fff}
+.admin-nav .brand img{height:32px}
+.admin-nav .brand span{font-size:14px;font-weight:700;opacity:.8}
+.admin-nav .brand em{color:var(--red);font-style:normal}
+.admin-nav-right{display:flex;align-items:center;gap:16px}
+.nav-badge{font-size:11px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);padding:4px 10px;border-radius:2px}
+.btn-logout{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.8);padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--ff)}
+.btn-logout:hover{background:rgba(255,0,0,.2);color:#fff}
+
+.admin-body{display:flex;height:calc(100vh - 60px);position:sticky;top:60px}
+
+/* SIDEBAR */
+.sidebar{width:220px;background:#fff;border-right:1px solid var(--line);overflow-y:auto;flex-shrink:0}
+.sidebar-section{padding:20px 0 8px}
+.sidebar-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#aaa;padding:0 18px;margin-bottom:6px}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;color:var(--gray);border-left:3px solid transparent}
+.sidebar-item:hover{background:#f5f5f3;color:var(--ink)}
+.sidebar-item.active{background:#FFF5F5;color:var(--red);border-left-color:var(--red);font-weight:600}
+.sidebar-item .ico{font-size:16px;width:20px;text-align:center}
+
+/* MAIN */
+.admin-main{flex:1;overflow-y:auto;padding:32px 36px}
+.panel{display:none}
+.panel.active{display:block}
+.panel-header{margin-bottom:28px}
+.panel-header h1{font-size:24px;font-weight:800;color:var(--ink)}
+.panel-header p{font-size:13px;color:var(--gray);margin-top:4px}
+
+/* CARDS */
+.card{background:#fff;border:1px solid var(--line);padding:24px;margin-bottom:20px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.card-header h2{font-size:15px;font-weight:700}
+.card-header p{font-size:12px;color:var(--gray);margin-top:2px}
+
+/* FORM ELEMENTS */
+label{display:block;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--gray);margin-bottom:6px;margin-top:16px}
+label:first-child{margin-top:0}
+input[type=text],input[type=email],input[type=tel],input[type=url],input[type=password],textarea,select{
+  width:100%;border:1px solid var(--line);padding:10px 12px;font-family:var(--ff);font-size:13.5px;
+  outline:none;background:#fff;color:var(--ink)
+}
+input:focus,textarea:focus,select:focus{border-color:var(--red)}
+textarea{resize:vertical;min-height:80px}
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.f-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;font-family:var(--ff);font-size:13px;font-weight:600;cursor:pointer;border:none;letter-spacing:.02em}
+.btn-primary{background:var(--red);color:#fff}
+.btn-primary:hover{background:#AA0000}
+.btn-secondary{background:#f0f0ee;color:var(--ink);border:1px solid var(--line)}
+.btn-secondary:hover{background:#e5e5e3}
+.btn-success{background:var(--green);color:#fff}
+.btn-danger{background:#b91c1c;color:#fff;font-size:12px;padding:6px 12px}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-group{display:flex;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
+
+/* SAVE BANNER */
+#saveBanner{position:fixed;bottom:24px;right:28px;background:var(--green);color:#fff;padding:14px 22px;font-size:13px;font-weight:600;z-index:999;display:none;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+
+/* ITEMS LIST */
+.item-list{display:flex;flex-direction:column;gap:10px}
+.item-row{background:#fff;border:1px solid var(--line);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:grab}
+.item-row:hover{border-color:#ccc}
+.item-row-drag{opacity:.4}
+.item-row .drag-handle{color:#ccc;font-size:18px;user-select:none}
+.item-row .item-info{flex:1}
+.item-row .item-title{font-size:13.5px;font-weight:600}
+.item-row .item-sub{font-size:12px;color:var(--gray);margin-top:2px}
+.item-row .item-actions{display:flex;gap:8px}
+.badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;background:rgba(204,0,0,.1);color:var(--red);margin-left:8px}
+.badge-green{background:rgba(22,101,52,.1);color:var(--green)}
+.badge-gray{background:#eee;color:#888}
+
+/* TOGGLE */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-row label{margin:0;text-transform:none;letter-spacing:0;font-size:13.5px;font-weight:500;color:var(--ink)}
+.toggle-row span{font-size:12px;color:var(--gray);display:block;margin-top:2px}
+.toggle{position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:#ccc;cursor:pointer;border-radius:22px;transition:.2s}
+.toggle-slider:before{position:absolute;content:"";height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked + .toggle-slider{background:var(--red)}
+.toggle input:checked + .toggle-slider:before{transform:translateX(18px)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;width:640px;max-height:80vh;overflow-y:auto;border-top:4px solid var(--red)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--line)}
+.modal-header h3{font-size:16px;font-weight:700}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#888;padding:0}
+.modal-body{padding:24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+
+/* PUBLISH BOX */
+.publish-box{background:var(--ink);color:#fff;padding:24px;margin-top:24px}
+.publish-box h3{font-size:15px;font-weight:700;margin-bottom:8px}
+.publish-box p{font-size:12.5px;color:rgba(255,255,255,.6);line-height:1.7;margin-bottom:16px}
+.publish-box code{display:block;background:rgba(255,255,255,.08);padding:10px 14px;font-size:12px;margin-bottom:14px;color:#aaffaa;line-height:1.7;white-space:pre-wrap;word-break:break-all}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-box{background:#fff;border:1px solid var(--line);padding:20px;border-top:3px solid var(--red)}
+.stat-box .num{font-size:32px;font-weight:800;color:var(--ink)}
+.stat-box .lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gray);margin-top:4px}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="brand">
+      <img src="logo.png" alt="Czar" onerror="this.style.display='none'"/>
+      <span>Admin <em>Panel</em></span>
+    </div>
+    <h2>Sign In</h2>
+    <p>This page is password protected. Authorised staff only.</p>
+    <input type="password" id="pwInput" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="btn-login" onclick="doLogin()">Sign In →</button>
+    <div class="login-err" id="loginErr">Incorrect password. Please try again.</div>
+  </div>
+</div>
+
+<!-- ══ ADMIN SHELL ══ -->
+<div id="adminShell">
+  <nav class="admin-nav">
+    <div class="brand">
+      <img src="logo.png" alt="Czar" onerror="this.style.display='none'"/>
+      <span>Czar Consultancy — <em>Admin Panel</em></span>
+    </div>
+    <div class="admin-nav-right">
+      <span class="nav-badge" id="lastSaved">Not saved yet</span>
+      <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+    </div>
+  </nav>
+  <div class="admin-body">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Overview</div>
+        <div class="sidebar-item active" onclick="showPanel('dashboard')" id="tab-dashboard"><span class="ico">📊</span> Dashboard</div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Content</div>
+        <div class="sidebar-item" onclick="showPanel('homepage')" id="tab-homepage"><span class="ico">🏠</span> Homepage Text</div>
+        <div class="sidebar-item" onclick="showPanel('services')" id="tab-services"><span class="ico">⚖️</span> Services</div>
+        <div class="sidebar-item" onclick="showPanel('team')" id="tab-team"><span class="ico">👥</span> Team Members</div>
+        <div class="sidebar-item" onclick="showPanel('jobs')" id="tab-jobs"><span class="ico">💼</span> Jobs / Careers</div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Settings</div>
+        <div class="sidebar-item" onclick="showPanel('contact')" id="tab-contact"><span class="ico">📞</span> Contact Info</div>
+        <div class="sidebar-item" onclick="showPanel('publish')" id="tab-publish"><span class="ico">🚀</span> Publish Changes</div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="admin-main">
+
+      <!-- DASHBOARD -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="panel-header">
+          <h1>Dashboard</h1>
+          <p>Overview of your website content. Make changes in the sections on the left.</p>
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="num" id="stat-services">12</div><div class="lbl">Services</div></div>
+          <div class="stat-box"><div class="num" id="stat-team">4</div><div class="lbl">Team Members</div></div>
+          <div class="stat-box"><div class="num" id="stat-jobs">3</div><div class="lbl">Job Openings</div></div>
+          <div class="stat-box"><div class="num" id="stat-changes">0</div><div class="lbl">Pending Changes</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div><h2>Quick Actions</h2><p>Common tasks at a glance</p></div></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+            <button class="btn btn-secondary" onclick="showPanel('jobs')">➕ Add Job Opening</button>
+            <button class="btn btn-secondary" onclick="showPanel('team')">➕ Add Team Member</button>
+            <button class="btn btn-secondary" onclick="showPanel('homepage')">✏️ Edit Hero Text</button>
+            <button class="btn btn-secondary" onclick="showPanel('services')">✏️ Edit Services</button>
+            <button class="btn btn-secondary" onclick="showPanel('contact')">📞 Update Contact</button>
+            <button class="btn btn-primary" onclick="showPanel('publish')">🚀 Publish Changes</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div><h2>How This Works</h2></div></div>
+          <p style="font-size:13.5px;color:var(--gray);line-height:1.9">
+            1. Edit any section using the sidebar on the left.<br/>
+            2. Click <strong>"Save Changes"</strong> in each section.<br/>
+            3. Go to <strong>"Publish Changes"</strong> and copy the generated code.<br/>
+            4. Paste it into your <code style="background:#f0f0ee;padding:2px 6px;font-size:12px">index.html</code> at the marked location and re-upload to Vercel.<br/>
+            <em style="color:var(--red);font-size:12px">Note: Changes are saved here in your browser until you publish them into the site file.</em>
+          </p>
+        </div>
+      </div>
+
+      <!-- HOMEPAGE TEXT -->
+      <div class="panel" id="panel-homepage">
+        <div class="panel-header"><h1>Homepage Text</h1><p>Edit the hero section, taglines and key descriptions.</p></div>
+        <div class="card">
+          <div class="card-header"><div><h2>Hero Section</h2><p>The first thing visitors see</p></div></div>
+          <label>Hero Tag (small text above heading)</label>
+          <input type="text" id="hp-tag" placeholder="e.g. Trusted Since 2005"/>
+          <label>Main Heading</label>
+          <input type="text" id="hp-heading" placeholder="e.g. India's Most Trusted Compliance & Labour Law Advisory"/>
+          <label>Sub Heading</label>
+          <input type="text" id="hp-sub" placeholder="e.g. Trusted Labour Law, Compliance & HR Advisory Across India"/>
+          <label>Description</label>
+          <textarea id="hp-desc" rows="3" placeholder="Hero paragraph text..."></textarea>
+        </div>
+        <div class="card">
+          <div class="card-header"><div><h2>About Section</h2></div></div>
+          <label>About Paragraph 1</label>
+          <textarea id="hp-about1" rows="3"></textarea>
+          <label>About Paragraph 2</label>
+          <textarea id="hp-about2" rows="3"></textarea>
+        </div>
+        <div class="card">
+          <div class="card-header"><div><h2>Page Title & SEO</h2></div></div>
+          <label>Browser Tab Title</label>
+          <input type="text" id="hp-title" placeholder="Czar Consultancy | Labour Law, Compliance & HR Advisory"/>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="saveHomepage()">💾 Save Homepage Changes</button>
+          <button class="btn btn-secondary" onclick="loadHomepage()">↺ Reset to Current</button>
+        </div>
+      </div>
+
+      <!-- SERVICES -->
+      <div class="panel" id="panel-services">
+        <div class="panel-header"><h1>Services</h1><p>Edit service titles, short descriptions and detail page content. Drag to reorder.</p></div>
+        <div class="card">
+          <div class="card-header">
+            <div><h2>All Services</h2><p>Click any service to edit it</p></div>
+            <button class="btn btn-primary btn-sm" onclick="openServiceModal(-1)">➕ Add Service</button>
+          </div>
+          <div class="item-list" id="svcList"></div>
+        </div>
+      </div>
+
+      <!-- TEAM -->
+      <div class="panel" id="panel-team">
+        <div class="panel-header"><h1>Team Members</h1><p>Add, edit or remove team members shown on the website.</p></div>
+        <div class="card">
+          <div class="card-header">
+            <div><h2>Team Members</h2></div>
+            <button class="btn btn-primary btn-sm" onclick="openTeamModal(-1)">➕ Add Member</button>
+          </div>
+          <div class="item-list" id="teamList"></div>
+        </div>
+      </div>
+
+      <!-- JOBS -->
+      <div class="panel" id="panel-jobs">
+        <div class="panel-header"><h1>Jobs & Careers</h1><p>Manage open positions. These appear on the Careers page.</p></div>
+        <div class="card">
+          <div class="card-header">
+            <div><h2>Job Openings</h2></div>
+            <button class="btn btn-primary btn-sm" onclick="openJobModal(-1)">➕ Add Job</button>
+          </div>
+          <div class="item-list" id="jobList"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div><h2>Careers Page Visibility</h2></div></div>
+          <div class="toggle-row">
+            <div>
+              <label>Show Careers in Navigation</label>
+              <span>When ON, the Careers link appears in the website menu</span>
+            </div>
+            <label class="toggle"><input type="checkbox" id="careersVisible"/><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="saveJobs()">💾 Save Job Settings</button>
+        </div>
+      </div>
+
+      <!-- CONTACT -->
+      <div class="panel" id="panel-contact">
+        <div class="panel-header"><h1>Contact Info</h1><p>Update phone numbers, email addresses and office locations.</p></div>
+        <div class="card">
+          <div class="card-header"><div><h2>Primary Contact</h2></div></div>
+          <div class="f-row">
+            <div><label>Phone Number</label><input type="tel" id="ct-phone" placeholder="+91 9999898370"/></div>
+            <div><label>WhatsApp Number</label><input type="tel" id="ct-wa" placeholder="+91 9999898370"/></div>
+          </div>
+          <label>Email Address</label>
+          <input type="email" id="ct-email" placeholder="yashpundeer0@gmail.com"/>
+        </div>
+        <div class="card">
+          <div class="card-header"><div><h2>Office Addresses</h2></div></div>
+          <label>Gurugram Office</label>
+          <textarea id="ct-addr1" rows="3" placeholder="Full office address, Gurugram"></textarea>
+          <label>Delhi Office</label>
+          <textarea id="ct-addr2" rows="3" placeholder="Full office address, New Delhi"></textarea>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="saveContact()">💾 Save Contact Info</button>
+          <button class="btn btn-secondary" onclick="loadContact()">↺ Reset</button>
+        </div>
+      </div>
+
+      <!-- PUBLISH -->
+      <div class="panel" id="panel-publish">
+        <div class="panel-header"><h1>Publish Changes</h1><p>Generate a data block and update your live site.</p></div>
+        <div class="card">
+          <div class="card-header"><div><h2>How to Publish</h2></div></div>
+          <p style="font-size:13.5px;color:var(--gray);line-height:2">
+            <strong>Step 1</strong> — Click "Generate Code" below.<br/>
+            <strong>Step 2</strong> — Copy the generated code block.<br/>
+            <strong>Step 3</strong> — Open <code style="background:#f0f0ee;padding:2px 6px">index.html</code> in any text editor (Notepad, VS Code, etc).<br/>
+            <strong>Step 4</strong> — Find the line that says: <code style="background:#f0f0ee;padding:2px 6px">/* ADMIN DATA — paste below */</code><br/>
+            <strong>Step 5</strong> — Replace everything between that marker and <code style="background:#f0f0ee;padding:2px 6px">/* END ADMIN DATA */</code> with the copied code.<br/>
+            <strong>Step 6</strong> — Save the file and re-upload to Vercel.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-header"><div><h2>Generate Export Code</h2></div></div>
+          <button class="btn btn-primary" style="margin-bottom:16px" onclick="generateCode()">⚡ Generate Code Block</button>
+          <textarea id="exportCode" rows="16" style="font-family:monospace;font-size:11.5px;background:#f8f8f6;color:#333" placeholder="Click 'Generate Code' above to create your export..."></textarea>
+          <div class="btn-group" style="border:none;padding:0;margin-top:12px">
+            <button class="btn btn-success" onclick="copyCode()">📋 Copy Code</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- SAVE BANNER -->
+<div id="saveBanner">✓ Changes saved</div>
+
+<!-- SERVICE MODAL -->
+<div class="modal-overlay" id="svcModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="svcModalTitle">Edit Service</h3>
+      <button class="modal-close" onclick="closeModal('svcModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="svc-idx"/>
+      <div class="f-row">
+        <div><label>Service ID (no spaces)</label><input type="text" id="svc-id" placeholder="e.g. bocw"/></div>
+        <div><label>Number Label</label><input type="text" id="svc-num" placeholder="e.g. 01"/></div>
+      </div>
+      <label>Service Title</label>
+      <input type="text" id="svc-title" placeholder="e.g. BOCW Act Registration"/>
+      <label>Short Description (card)</label>
+      <textarea id="svc-short" rows="2"></textarea>
+      <label>Hero Heading</label>
+      <input type="text" id="svc-hero"/>
+      <label>Hero Description</label>
+      <textarea id="svc-heroDesc" rows="2"></textarea>
+      <label>Badge Text</label>
+      <input type="text" id="svc-badge" placeholder="e.g. Since 1996"/>
+      <label>Intro Paragraph</label>
+      <textarea id="svc-intro" rows="3"></textarea>
+      <label>About Paragraph</label>
+      <textarea id="svc-about" rows="3"></textarea>
+      <label>Key Services (one per line)</label>
+      <textarea id="svc-checks" rows="6" placeholder="Enter each bullet point on a new line"></textarea>
+      <label>Image URL</label>
+      <input type="url" id="svc-image" placeholder="https://images.unsplash.com/..."/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="svcDeleteBtn" onclick="deleteService()">🗑 Delete</button>
+      <button class="btn btn-secondary" onclick="closeModal('svcModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveService()">Save Service</button>
+    </div>
+  </div>
+</div>
+
+<!-- TEAM MODAL -->
+<div class="modal-overlay" id="teamModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="teamModalTitle">Edit Team Member</h3>
+      <button class="modal-close" onclick="closeModal('teamModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="tm-idx"/>
+      <div class="f-row">
+        <div><label>Full Name</label><input type="text" id="tm-name" placeholder="Raj Kumar"/></div>
+        <div><label>Job Title / Role</label><input type="text" id="tm-role" placeholder="Managing Partner"/></div>
+      </div>
+      <label>Bio (short paragraph)</label>
+      <textarea id="tm-bio" rows="3" placeholder="Brief professional background..."></textarea>
+      <label>Photo URL</label>
+      <input type="url" id="tm-photo" placeholder="https://images.unsplash.com/..."/>
+      <label>LinkedIn URL (optional)</label>
+      <input type="url" id="tm-linkedin" placeholder="https://linkedin.com/in/..."/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="tmDeleteBtn" onclick="deleteTeam()">🗑 Delete</button>
+      <button class="btn btn-secondary" onclick="closeModal('teamModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTeam()">Save Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- JOB MODAL -->
+<div class="modal-overlay" id="jobModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="jobModalTitle">Edit Job Opening</h3>
+      <button class="modal-close" onclick="closeModal('jobModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="jb-idx"/>
+      <label>Job Title</label>
+      <input type="text" id="jb-title" placeholder="e.g. Labour Law Associate"/>
+      <div class="f-row-3">
+        <div><label>Type</label><select id="jb-type"><option>Full-Time</option><option>Part-Time</option><option>Internship</option><option>Contract</option><option>Remote</option></select></div>
+        <div><label>Location</label><input type="text" id="jb-location" placeholder="e.g. Gurugram"/></div>
+        <div><label>Experience</label><input type="text" id="jb-exp" placeholder="e.g. 1–3 Yrs"/></div>
+      </div>
+      <label>Job Description</label>
+      <textarea id="jb-desc" rows="4" placeholder="Describe the role and responsibilities..."></textarea>
+      <div class="toggle-row" style="margin-top:16px">
+        <div>
+          <label style="text-transform:none;letter-spacing:0;font-size:13.5px;font-weight:600">Active / Visible</label>
+          <span style="font-size:12px;color:var(--gray)">Toggle off to hide this job without deleting it</span>
+        </div>
+        <label class="toggle"><input type="checkbox" id="jb-active" checked/><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="jbDeleteBtn" onclick="deleteJob()">🗑 Delete</button>
+      <button class="btn btn-secondary" onclick="closeModal('jobModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveJob()">Save Job</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════
+// AUTH
+// ══════════════════════════════════
+// Change this password to whatever you want
+const ADMIN_PASSWORD = 'czar2025';
+
+function doLogin(){
+  const pw = document.getElementById('pwInput').value;
+  if(pw === ADMIN_PASSWORD){
+    sessionStorage.setItem('czar_admin','1');
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('adminShell').style.display='block';
+    initAdmin();
+  } else {
+    document.getElementById('loginErr').style.display='block';
+  }
+}
+function doLogout(){
+  sessionStorage.removeItem('czar_admin');
+  location.reload();
+}
+if(sessionStorage.getItem('czar_admin')){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('adminShell').style.display='block';
+  document.addEventListener('DOMContentLoaded', initAdmin);
+}
+
+// ══════════════════════════════════
+// STATE
+// ══════════════════════════════════
+let data = {
+  homepage:{},
+  services:[],
+  team:[],
+  jobs:[],
+  contact:{},
+  careersVisible:false
+};
+let changeCount = 0;
+
+function initAdmin(){
+  loadStateFromStorage();
+  renderServiceList();
+  renderTeamList();
+  renderJobList();
+  loadHomepage();
+  loadContact();
+  updateStats();
+}
+
+function loadStateFromStorage(){
+  const saved = localStorage.getItem('czar_admin_data');
+  if(saved){
+    try{ data = {...data, ...JSON.parse(saved)}; }
+    catch(e){}
+  }
+  // defaults for services if empty
+  if(!data.services || data.services.length===0){
+    data.services = getDefaultServices();
+  }
+  if(!data.team || data.team.length===0){
+    data.team = getDefaultTeam();
+  }
+  if(!data.jobs || data.jobs.length===0){
+    data.jobs = getDefaultJobs();
+  }
+  if(!data.homepage || !data.homepage.heading){
+    data.homepage = getDefaultHomepage();
+  }
+  if(!data.contact || !data.contact.phone){
+    data.contact = getDefaultContact();
+  }
+}
+
+function saveState(){
+  localStorage.setItem('czar_admin_data', JSON.stringify(data));
+  changeCount++;
+  updateStats();
+  const ts = new Date().toLocaleTimeString();
+  document.getElementById('lastSaved').textContent = 'Saved ' + ts;
+  const banner = document.getElementById('saveBanner');
+  banner.style.display='flex';
+  setTimeout(()=>{banner.style.display='none';},2200);
+}
+
+function updateStats(){
+  document.getElementById('stat-services').textContent = data.services.length;
+  document.getElementById('stat-team').textContent = data.team.length;
+  document.getElementById('stat-jobs').textContent = data.jobs.filter(j=>j.active).length;
+  document.getElementById('stat-changes').textContent = changeCount;
+}
+
+// ══════════════════════════════════
+// NAV
+// ══════════════════════════════════
+function showPanel(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s=>s.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+// ══════════════════════════════════
+// HOMEPAGE
+// ══════════════════════════════════
+function getDefaultHomepage(){
+  return {
+    tag:'Trusted Since 2005',
+    heading:"India's Most Trusted Compliance & Labour Law Advisory",
+    sub:'Trusted Labour Law, Compliance & HR Advisory Across India',
+    desc:'Czar Consultancy delivers professional compliance services for industries, factories, commercial establishments, banks, hotels and software companies — covering all Labour Laws, Payroll, PF/ESIC and industrial dispute management.',
+    about1:'We are specialized in providing all Labour Laws and other related services and handling the industrial disputes for management side. We have our own Payroll Software with flexibility of any payroll contents.',
+    about2:'Our team works closely with clients across manufacturing, IT, banking, hospitality and retail to ensure full statutory compliance at every level.',
+    title:'Czar Consultancy | Labour Law, Compliance & HR Advisory'
+  };
+}
+function loadHomepage(){
+  const h = data.homepage;
+  document.getElementById('hp-tag').value = h.tag||'';
+  document.getElementById('hp-heading').value = h.heading||'';
+  document.getElementById('hp-sub').value = h.sub||'';
+  document.getElementById('hp-desc').value = h.desc||'';
+  document.getElementById('hp-about1').value = h.about1||'';
+  document.getElementById('hp-about2').value = h.about2||'';
+  document.getElementById('hp-title').value = h.title||'';
+}
+function saveHomepage(){
+  data.homepage = {
+    tag: document.getElementById('hp-tag').value.trim(),
+    heading: document.getElementById('hp-heading').value.trim(),
+    sub: document.getElementById('hp-sub').value.trim(),
+    desc: document.getElementById('hp-desc').value.trim(),
+    about1: document.getElementById('hp-about1').value.trim(),
+    about2: document.getElementById('hp-about2').value.trim(),
+    title: document.getElementById('hp-title').value.trim()
+  };
+  saveState();
+}
+
+// ══════════════════════════════════
+// SERVICES
+// ══════════════════════════════════
+function getDefaultServices(){
+  return [
+    {id:'bocw',num:'01',title:'BOCW Act Registration',short:'Building and Other Construction Workers Act registration and compliance.',hero:'BOCW Act Registration & Compliance',heroDesc:'Complete Building and Other Construction Workers Act registration and ongoing statutory compliance for construction enterprises across India.',badge:'Since 1996',intro:'The Building and Other Construction Workers Act 1996 governs employment conditions of construction workers.',about:'Czar Consultancy handles every step of BOCW registration and compliance for construction enterprises.',checks:['Registration of establishments under BOCW Act','Welfare Cess assessment and timely deposit','Maintenance of registers and records','Submission of annual returns','Advisory on welfare provisions for workers'],image:'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&h=500&fit=crop'},
+    {id:'factory',num:'02',title:'Factory Act Consultants',short:'Complete Factories Act compliance — licences, renewals, safety and statutory returns.',hero:'Factory Act Compliance',heroDesc:'End-to-end Factories Act advisory covering licences, renewals, safety compliance and statutory returns.',badge:'Expert Advisory',intro:'The Factories Act 1948 governs health, safety, welfare and working conditions in factories.',about:'Czar Consultancy provides full services to businesses navigating Factories Act complexities.',checks:['Factory licence application and renewal','Site plan approval and layout compliance','Maintenance of statutory registers','Filing of annual returns','Safety committee constitution'],image:'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&h=500&fit=crop'},
+    {id:'labour',num:'03',title:'Labour Law Consultant',short:'Trusted advisory on all statutory labour law obligations and industrial disputes.',hero:'Labour Law Consultancy',heroDesc:'Recognised as one of India\'s most trusted labour law consultants.',badge:'Pan-India',intro:'Indian labour law comprises over 40 central laws and 100+ state laws.',about:'Czar Consultancy provides comprehensive advisory to management on all aspects of labour law.',checks:['Advisory on Minimum Wages Act, Payment of Wages Act','Industrial dispute handling','Drafting of standing orders and HR policies','Compliance audit across labour statutes','Liaison with Labour Department'],image:'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&h=500&fit=crop'},
+    {id:'payroll',num:'04',title:'Payroll Processing',short:'Complete payroll management — computation, deductions, payslips and compliance.',hero:'Payroll Processing Services',heroDesc:'End-to-end payroll management using our proprietary software.',badge:'Proprietary Software',intro:'Accurate and timely payroll processing is critical for every organization.',about:'Czar Consultancy takes complete responsibility of managing your company\'s payroll.',checks:['Monthly payroll computation','Computation of TDS on salary','PF, ESI, PT deductions and challans','Salary slip generation','Full and Final Settlement computation'],image:'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800&h=500&fit=crop'},
+    {id:'pfesic',num:'05',title:'PF & ESIC Compliance',short:'Social security compliance under PF Act 1952 and ESIC Act 1948.',hero:'PF & ESIC Compliance Services',heroDesc:'End-to-end social security compliance.',badge:'Social Security',intro:'PF and ESIC form the bedrock of social security for workers in India.',about:'Czar Consultancy handles all aspects of PF and ESIC compliance.',checks:['ESIC registration and monthly challans','Employee IP number generation','PF monthly ECR preparation','Annual returns filing','Handling ESIC and PF inspections'],image:'https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&h=500&fit=crop'},
+    {id:'posh',num:'06',title:'POSH Act 2013',short:'Prevention of Sexual Harassment — policy, IC constitution and training.',hero:'POSH Act 2013 Compliance',heroDesc:'POSH compliance — policy drafting, Internal Committee constitution, training and reporting.',badge:'Workplace Safety',intro:'The POSH Act 2013 mandates every employer with 10+ employees to constitute an Internal Committee.',about:'Czar Consultancy helps organizations build a robust POSH compliance framework.',checks:['Drafting of Sexual Harassment Policy','Constitution of Internal Committee','Conducting awareness training sessions','Annual compliance report preparation','Handling of POSH complaints'],image:'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=800&h=500&fit=crop'},
+    {id:'fire',num:'07',title:'Fire NOC Approval',short:'Fire fighting scheme design and Fire NOC approvals.',hero:'Fire NOC & Fire Safety Compliance',heroDesc:'Complete assistance in obtaining Fire NOC approvals and fire safety compliance.',badge:'Safety Certified',intro:'Fire safety compliance is mandatory for all commercial and industrial buildings.',about:'Czar Consultancy provides end-to-end fire safety compliance and NOC assistance.',checks:['Fire safety audit and gap analysis','Preparation of fire fighting scheme drawings','Liaison with State Fire Department','Annual fire NOC renewal','Staff fire safety training'],image:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=500&fit=crop'},
+    {id:'recruitment',num:'08',title:'Recruitment Services',short:'Legal recruitment compliance and talent placement across India.',hero:'Recruitment Services',heroDesc:'Effective recruitment consultancy services across diversified domains in India.',badge:'Pan-India Talent',intro:'Finding the right talent while staying compliant with employment laws is complex.',about:'Czar Consultancy offers a range of recruitment consultancy services across India.',checks:['End-to-end recruitment for all levels','Compliance-oriented offer letter drafting','Background verification coordination','Onboarding documentation','Labour market advisory'],image:'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&h=500&fit=crop'}
+  ];
+}
+
+function renderServiceList(){
+  const el = document.getElementById('svcList');
+  el.innerHTML = '';
+  data.services.forEach((s,i)=>{
+    el.innerHTML += `<div class="item-row">
+      <span class="drag-handle">⠿</span>
+      <div class="item-info">
+        <div class="item-title">${s.num} — ${s.title}</div>
+        <div class="item-sub">${s.short}</div>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openServiceModal(${i})">✏️ Edit</button>
+      </div>
+    </div>`;
+  });
+}
+
+function openServiceModal(idx){
+  document.getElementById('svc-idx').value = idx;
+  const isNew = idx === -1;
+  document.getElementById('svcModalTitle').textContent = isNew ? 'Add New Service' : 'Edit Service';
+  document.getElementById('svcDeleteBtn').style.display = isNew ? 'none' : '';
+  const s = isNew ? {id:'',num:'',title:'',short:'',hero:'',heroDesc:'',badge:'',intro:'',about:'',checks:[],image:''} : data.services[idx];
+  document.getElementById('svc-id').value = s.id||'';
+  document.getElementById('svc-num').value = s.num||'';
+  document.getElementById('svc-title').value = s.title||'';
+  document.getElementById('svc-short').value = s.short||'';
+  document.getElementById('svc-hero').value = s.hero||'';
+  document.getElementById('svc-heroDesc').value = s.heroDesc||'';
+  document.getElementById('svc-badge').value = s.badge||'';
+  document.getElementById('svc-intro').value = s.intro||'';
+  document.getElementById('svc-about').value = s.about||'';
+  document.getElementById('svc-checks').value = (s.checks||[]).join('\n');
+  document.getElementById('svc-image').value = s.image||'';
+  document.getElementById('svcModal').classList.add('open');
+}
+
+function saveService(){
+  const idx = parseInt(document.getElementById('svc-idx').value);
+  const s = {
+    id: document.getElementById('svc-id').value.trim().toLowerCase().replace(/\s+/g,'-'),
+    num: document.getElementById('svc-num').value.trim(),
+    title: document.getElementById('svc-title').value.trim(),
+    short: document.getElementById('svc-short').value.trim(),
+    hero: document.getElementById('svc-hero').value.trim(),
+    heroDesc: document.getElementById('svc-heroDesc').value.trim(),
+    badge: document.getElementById('svc-badge').value.trim(),
+    intro: document.getElementById('svc-intro').value.trim(),
+    about: document.getElementById('svc-about').value.trim(),
+    checks: document.getElementById('svc-checks').value.split('\n').map(l=>l.trim()).filter(Boolean),
+    image: document.getElementById('svc-image').value.trim()
+  };
+  if(idx === -1) data.services.push(s);
+  else data.services[idx] = s;
+  saveState();
+  renderServiceList();
+  closeModal('svcModal');
+}
+
+function deleteService(){
+  const idx = parseInt(document.getElementById('svc-idx').value);
+  if(confirm('Delete this service? This cannot be undone.')){
+    data.services.splice(idx,1);
+    saveState();
+    renderServiceList();
+    closeModal('svcModal');
+  }
+}
+
+// ══════════════════════════════════
+// TEAM
+// ══════════════════════════════════
+function getDefaultTeam(){
+  return [
+    {name:'Raj Kumar',role:'Managing Partner & Head of Firm',bio:'Expert in labour law with 20+ years of practice across manufacturing, construction and IT sectors. Handles complex industrial disputes and statutory compliance for large organisations.',photo:'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=500&fit=crop&crop=face',linkedin:''},
+    {name:'Priya Mehta',role:'Labour Law Specialist',bio:'Specialist in factory act compliance and BOCW registration with 14+ years of experience across manufacturing and construction sectors.',photo:'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=500&fit=crop&crop=face',linkedin:''},
+    {name:'Arun Kapoor',role:'Compliance Director',bio:'PF and ESIC compliance specialist managing social security obligations for 50+ client organisations across Delhi-NCR.',photo:'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=500&fit=crop&crop=face',linkedin:''},
+    {name:'Sunita Verma',role:'HR Advisory Lead',bio:'POSH Act consultant and HR policy specialist with expertise in workplace compliance, recruitment and employee relations.',photo:'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=500&fit=crop&crop=face',linkedin:''}
+  ];
+}
+
+function renderTeamList(){
+  const el = document.getElementById('teamList');
+  el.innerHTML = '';
+  data.team.forEach((m,i)=>{
+    el.innerHTML += `<div class="item-row">
+      <span class="drag-handle">⠿</span>
+      <div class="item-info">
+        <div class="item-title">${m.name}</div>
+        <div class="item-sub">${m.role}</div>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openTeamModal(${i})">✏️ Edit</button>
+      </div>
+    </div>`;
+  });
+}
+
+function openTeamModal(idx){
+  document.getElementById('tm-idx').value = idx;
+  const isNew = idx === -1;
+  document.getElementById('teamModalTitle').textContent = isNew ? 'Add Team Member' : 'Edit Team Member';
+  document.getElementById('tmDeleteBtn').style.display = isNew ? 'none' : '';
+  const m = isNew ? {name:'',role:'',bio:'',photo:'',linkedin:''} : data.team[idx];
+  document.getElementById('tm-name').value = m.name||'';
+  document.getElementById('tm-role').value = m.role||'';
+  document.getElementById('tm-bio').value = m.bio||'';
+  document.getElementById('tm-photo').value = m.photo||'';
+  document.getElementById('tm-linkedin').value = m.linkedin||'';
+  document.getElementById('teamModal').classList.add('open');
+}
+
+function saveTeam(){
+  const idx = parseInt(document.getElementById('tm-idx').value);
+  const m = {
+    name: document.getElementById('tm-name').value.trim(),
+    role: document.getElementById('tm-role').value.trim(),
+    bio: document.getElementById('tm-bio').value.trim(),
+    photo: document.getElementById('tm-photo').value.trim(),
+    linkedin: document.getElementById('tm-linkedin').value.trim()
+  };
+  if(idx===-1) data.team.push(m);
+  else data.team[idx] = m;
+  saveState();
+  renderTeamList();
+  closeModal('teamModal');
+}
+
+function deleteTeam(){
+  const idx = parseInt(document.getElementById('tm-idx').value);
+  if(confirm('Remove this team member?')){
+    data.team.splice(idx,1);
+    saveState();
+    renderTeamList();
+    closeModal('teamModal');
+  }
+}
+
+// ══════════════════════════════════
+// JOBS
+// ══════════════════════════════════
+function getDefaultJobs(){
+  return [
+    {title:'Labour Law Associate',type:'Full-Time',location:'Gurugram',exp:'1–3 Yrs Experience',desc:'Assist clients with statutory registrations, compliance audits and documentation under the Factories Act, BOCW Act, Contract Labour Act and related labour legislations.',active:true},
+    {title:'Payroll & Compliance Executive',type:'Full-Time',location:'Delhi',exp:'0–2 Yrs Experience',desc:'Manage end-to-end payroll processing, PF/ESIC filings and statutory returns for client organisations across multiple industries.',active:true},
+    {title:'HR Advisory Intern',type:'Internship',location:'Gurugram / Remote',exp:'Freshers Welcome',desc:'Support our advisory team with research, documentation and client coordination on POSH, recruitment compliance and HR policy projects.',active:true}
+  ];
+}
+
+function renderJobList(){
+  const el = document.getElementById('jobList');
+  el.innerHTML = '';
+  document.getElementById('careersVisible').checked = data.careersVisible||false;
+  if(data.jobs.length===0){
+    el.innerHTML = '<p style="color:var(--gray);font-size:13px;padding:12px">No jobs added yet. Click "Add Job" to create one.</p>';
+    return;
+  }
+  data.jobs.forEach((j,i)=>{
+    el.innerHTML += `<div class="item-row">
+      <span class="drag-handle">⠿</span>
+      <div class="item-info">
+        <div class="item-title">${j.title}<span class="badge ${j.active?'badge-green':'badge-gray'}">${j.active?'Active':'Hidden'}</span></div>
+        <div class="item-sub">${j.type} · ${j.location} · ${j.exp}</div>
+      </div>
+      <div class="item-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openJobModal(${i})">✏️ Edit</button>
+      </div>
+    </div>`;
+  });
+}
+
+function openJobModal(idx){
+  document.getElementById('jb-idx').value = idx;
+  const isNew = idx === -1;
+  document.getElementById('jobModalTitle').textContent = isNew ? 'Add Job Opening' : 'Edit Job';
+  document.getElementById('jbDeleteBtn').style.display = isNew ? 'none' : '';
+  const j = isNew ? {title:'',type:'Full-Time',location:'',exp:'',desc:'',active:true} : data.jobs[idx];
+  document.getElementById('jb-title').value = j.title||'';
+  document.getElementById('jb-type').value = j.type||'Full-Time';
+  document.getElementById('jb-location').value = j.location||'';
+  document.getElementById('jb-exp').value = j.exp||'';
+  document.getElementById('jb-desc').value = j.desc||'';
+  document.getElementById('jb-active').checked = j.active !== false;
+  document.getElementById('jobModal').classList.add('open');
+}
+
+function saveJob(){
+  const idx = parseInt(document.getElementById('jb-idx').value);
+  const j = {
+    title: document.getElementById('jb-title').value.trim(),
+    type: document.getElementById('jb-type').value,
+    location: document.getElementById('jb-location').value.trim(),
+    exp: document.getElementById('jb-exp').value.trim(),
+    desc: document.getElementById('jb-desc').value.trim(),
+    active: document.getElementById('jb-active').checked
+  };
+  if(idx===-1) data.jobs.push(j);
+  else data.jobs[idx] = j;
+  saveState();
+  renderJobList();
+  closeModal('jobModal');
+}
+
+function deleteJob(){
+  const idx = parseInt(document.getElementById('jb-idx').value);
+  if(confirm('Delete this job posting?')){
+    data.jobs.splice(idx,1);
+    saveState();
+    renderJobList();
+    closeModal('jobModal');
+  }
+}
+
+function saveJobs(){
+  data.careersVisible = document.getElementById('careersVisible').checked;
+  saveState();
+}
+
+// ══════════════════════════════════
+// CONTACT
+// ══════════════════════════════════
+function getDefaultContact(){
+  return {
+    phone:'+91 9999898370',wa:'919999898370',email:'yashpundeer0@gmail.com',
+    addr1:'Gurugram Office Address, Haryana',addr2:'New Delhi Office Address'
+  };
+}
+function loadContact(){
+  const c = data.contact;
+  document.getElementById('ct-phone').value = c.phone||'';
+  document.getElementById('ct-wa').value = c.wa||'';
+  document.getElementById('ct-email').value = c.email||'';
+  document.getElementById('ct-addr1').value = c.addr1||'';
+  document.getElementById('ct-addr2').value = c.addr2||'';
+}
+function saveContact(){
+  data.contact = {
+    phone: document.getElementById('ct-phone').value.trim(),
+    wa: document.getElementById('ct-wa').value.trim(),
+    email: document.getElementById('ct-email').value.trim(),
+    addr1: document.getElementById('ct-addr1').value.trim(),
+    addr2: document.getElementById('ct-addr2').value.trim()
+  };
+  saveState();
+}
+
+// ══════════════════════════════════
+// PUBLISH — generate code block
+// ══════════════════════════════════
+function generateCode(){
+  const code = `/* ADMIN DATA — paste below */
+window.CZAR_ADMIN = ${JSON.stringify(data, null, 2)};
+/* END ADMIN DATA */`;
+  document.getElementById('exportCode').value = code;
+}
+
+function copyCode(){
+  const el = document.getElementById('exportCode');
+  if(!el.value){ alert('Click "Generate Code" first!'); return; }
+  navigator.clipboard.writeText(el.value).then(()=>{
+    const btn = event.target;
+    btn.textContent = '✓ Copied!';
+    btn.style.background = '#166534';
+    setTimeout(()=>{ btn.textContent = '📋 Copy Code'; btn.style.background=''; }, 2000);
+  });
+}
+
+// ══════════════════════════════════
+// MODALS
+// ══════════════════════════════════
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+}
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
