@@ -583,7 +583,7 @@ h2.display em{font-style:italic;color:var(--red)}
           <p style="font-size:13px;color:var(--gray2);margin-top:16px;font-weight:600;letter-spacing:.06em;text-transform:uppercase">— Founding Philosophy, Czar Consultancy</p>
         </div>
       </div>
-      <div class="people-grid">
+      <div class="people-grid" id="homeTeamGrid">
         <div class="person rv">
           <div class="person-accent"></div>
           <div class="person-img-wrap"><img class="person-img" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=500&fit=crop&crop=face" alt="Raj Kumar"/><div class="person-overlay"></div></div>
@@ -964,7 +964,7 @@ h2.display em{font-style:italic;color:var(--red)}
   <div class="wrap footer-top">
     <div class="f-brand">
       <!-- Logo has a white background, so it's wrapped in a light card for the dark footer -->
-      <div class="footer-logo-card"><img src="Logo.png" alt="Czar Consultancy" class="logo-img"/></div>
+      <div class="footer-logo-card"><img src="logo.png" alt="Czar Consultancy" class="logo-img"/></div>
       <p class="f-brand-desc">Specialized in professional services for industries, factories, commercial establishments, banks, hotels and software companies — covering all Labour Laws across India.</p>
     </div>
     <div class="f-col"><h4>Services</h4><ul id="footerSvcList1"></ul></div>
@@ -1154,11 +1154,15 @@ const services = [
 
 // ══════════════════════════════════════
 // BUILD DYNAMIC ELEMENTS
+// (uses admin panel overrides when available)
 // ══════════════════════════════════════
+const activeServices = window._adminServices || services;
+const activeTeam     = window._adminTeam     || null;
+const activeJobs     = window._adminJobs     || null;
 
 // Populate nav dropdown
 const svcDropdown = document.getElementById('svcDropdown');
-services.forEach(s => {
+activeServices.forEach(s => {
   const li = document.createElement('li');
   li.innerHTML = `<a onclick="navigate('services-${s.id}')">${s.title}</a>`;
   svcDropdown.appendChild(li);
@@ -1166,7 +1170,7 @@ services.forEach(s => {
 
 // Populate mobile nav service links
 const mobLinks = document.getElementById('mobSvcLinks');
-services.forEach(s => {
+activeServices.forEach(s => {
   const a = document.createElement('a');
   a.textContent = s.title;
   a.onclick = () => { navigate('services-'+s.id); closeMob(); };
@@ -1175,7 +1179,7 @@ services.forEach(s => {
 
 // Populate home service grid
 const homeGrid = document.getElementById('homeSvcGrid');
-services.forEach(s => {
+activeServices.forEach(s => {
   homeGrid.innerHTML += `
     <div class="svc-card rv" onclick="navigate('services-${s.id}')">
       <span class="svc-card-num">${s.num}</span>
@@ -1188,19 +1192,19 @@ services.forEach(s => {
 // Populate footer service lists
 const fl1 = document.getElementById('footerSvcList1');
 const fl2 = document.getElementById('footerSvcList2');
-services.slice(0,6).forEach(s => {
+activeServices.slice(0,6).forEach(s => {
   fl1.innerHTML += `<li><a onclick="navigate('services-${s.id}')">${s.title}</a></li>`;
 });
-services.slice(6).forEach(s => {
+activeServices.slice(6).forEach(s => {
   fl2.innerHTML += `<li><a onclick="navigate('services-${s.id}')">${s.title}</a></li>`;
 });
 
 // Build service pages
 const svcContainer = document.getElementById('svc-pages-container');
-services.forEach((s, idx) => {
-  const otherServices = services.filter(x => x.id !== s.id);
+activeServices.forEach((s, idx) => {
+  const otherServices = activeServices.filter(x => x.id !== s.id);
   const related = otherServices.slice(0,3);
-  const sidebarNavItems = services.map(x =>
+  const sidebarNavItems = activeServices.map(x =>
     `<li><a onclick="navigate('services-${x.id}')" class="${x.id===s.id?'active-svc':''}">${x.title}</a></li>`
   ).join('');
 
@@ -1338,8 +1342,49 @@ function closeMob(){
   ham.querySelectorAll('span').forEach(s=>{s.style.transform='';s.style.opacity='';});
 }
 
-// ══════════════════════════════════════
-// SCROLL PROGRESS (storytelling cue)
+// ── Apply admin team if set ──
+if(window._adminTeam){
+  const tg = document.getElementById('homeTeamGrid');
+  if(tg){
+    tg.innerHTML = window._adminTeam.map((m,i)=>`
+      <div class="person rv${i>0?' d'+i:''}">
+        <div class="person-accent"></div>
+        <div class="person-img-wrap"><img class="person-img" src="${m.photo||'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=500&fit=crop&crop=face'}" alt="${m.name}"/><div class="person-overlay"></div></div>
+        <div class="person-info"><h4>${m.name}</h4><p>${m.role}</p></div>
+      </div>`).join('');
+  }
+}
+
+// ── Apply admin jobs if set ──
+if(window._adminJobs){
+  const jl = document.querySelector('.job-list');
+  if(jl){
+    const active = window._adminJobs.filter(j=>j.active!==false);
+    jl.innerHTML = active.length===0
+      ? '<p style="color:var(--gray);font-size:14px">No open positions at this time. Check back soon!</p>'
+      : active.map(j=>`
+        <div class="job-card rv">
+          <div class="job-card-body">
+            <h3>${j.title}</h3>
+            <div class="job-meta">
+              <span class="job-tag">${j.type}</span>
+              <span class="job-tag">${j.location}</span>
+              <span class="job-tag">${j.exp}</span>
+            </div>
+            <p class="job-desc">${j.desc}</p>
+          </div>
+          <a class="btn btn-red job-apply-btn" onclick="applyForJob('${j.title}')">Apply Now →</a>
+        </div>`).join('');
+  }
+  // Careers nav visibility
+  const navCareers = document.getElementById('nav-careers');
+  if(navCareers && window._adminCareersVisible){
+    navCareers.onclick = ()=>navigate('careers');
+    navCareers.removeAttribute('href');
+  }
+}
+
+
 // ══════════════════════════════════════
 const progressBar = document.getElementById('scrollProgress');
 function updateScrollProgress(){
@@ -1599,6 +1644,54 @@ function handleSubmit(btn, prefix){
   });
 }
 
-</script>
-</body>
-</html>
+// ══════════════════════════════════════
+// ADMIN DATA — auto-applied from admin panel
+// ══════════════════════════════════════
+/* ADMIN DATA — paste below */
+/* END ADMIN DATA */
+
+(function applyAdminData(){
+  let d = null;
+  // 1. Check if published data injected via window.CZAR_ADMIN
+  if(window.CZAR_ADMIN) d = window.CZAR_ADMIN;
+  // 2. Fall back to localStorage (admin panel saves here)
+  if(!d){
+    try{ const raw = localStorage.getItem('czar_admin_data'); if(raw) d = JSON.parse(raw); }catch(e){}
+  }
+  if(!d) return;
+
+  // ── Page title ──
+  if(d.homepage && d.homepage.title) document.title = d.homepage.title;
+
+  // ── Hero text ──
+  if(d.homepage){
+    const h = d.homepage;
+    const sel = (s,fn) => { const el = document.querySelector(s); if(el && fn) fn(el); };
+    sel('.hero-sub',   el => { if(h.sub)     el.textContent = h.sub; });
+    sel('.hero-desc',  el => { if(h.desc)    el.innerHTML   = h.desc; });
+    sel('.hero h1',    el => { if(h.heading) el.innerHTML   = h.heading; });
+  }
+
+  // ── Contact info ──
+  if(d.contact){
+    const c = d.contact;
+    if(c.phone) document.querySelectorAll('a[href^="tel:"]').forEach(a=>{
+      a.textContent = c.phone; a.href = 'tel:'+c.phone.replace(/\s/g,'');
+    });
+    if(c.email) document.querySelectorAll('a[href^="mailto:"]').forEach(a=>{
+      a.textContent = c.email; a.href = 'mailto:'+c.email;
+    });
+    if(c.wa) document.querySelectorAll('a[href*="wa.me"]').forEach(a=>{
+      a.href = 'https://wa.me/'+c.wa.replace(/\D/g,'');
+    });
+  }
+
+  // ── Services override ──
+  if(d.services && d.services.length > 0) window._adminServices = d.services;
+
+  // ── Team override ──
+  if(d.team && d.team.length > 0) window._adminTeam = d.team;
+
+  // ── Jobs override ──
+  if(d.jobs){ window._adminJobs = d.jobs; window._adminCareersVisible = !!d.careersVisible; }
+})();
