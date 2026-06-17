@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1499,20 +1500,17 @@ initParticleNetwork('metricsCanvas',{count:35, linkDist:6.5, particleColor:0xCC0
 
 
 // ══════════════════════════════════════
-// FORM SUBMIT — sends enquiry to Email (Formspree) + WhatsApp (CallMeBot)
+// FORM SUBMIT — sends enquiry to Email (Web3Forms + Formspree) + WhatsApp
 // ══════════════════════════════════════
-// EMAIL SETUP:
-// 1. Go to https://formspree.io and sign up free with yashpundeer0@gmail.com
-// 2. Create a new form, set its destination email to yashpundeer0@gmail.com
-// 3. Copy the endpoint it gives you (looks like https://formspree.io/f/xxxxxxxx)
-// 4. Paste that endpoint below, replacing YOUR_FORM_ID
-const FORM_ENDPOINT = 'https://formspree.io/f/mrevjzbw';
+
+// WEB3FORMS SETUP:
+const WEB3FORMS_ACCESS_KEY = '2b8341f2-c9fd-49b7-875f-eb0b252ac18e';
+const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
+
+// FORMSPREE SETUP:
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/mrevjzbw';
 
 // WHATSAPP SETUP (via CallMeBot — free):
-// 1. Save +34 644 59 71 67 in your phone contacts
-// 2. WhatsApp it the exact text: "I allow callmebot to send me messages"
-// 3. You'll receive your personal API key in reply — paste it below
-// 4. Set WA_PHONE to your WhatsApp number in international format, no + or spaces (e.g. 919999898370)
 const WA_PHONE  = 'YOUR_WHATSAPP_NUMBER';
 const WA_APIKEY = 'YOUR_CALLMEBOT_APIKEY';
 
@@ -1528,8 +1526,8 @@ function applyForJob(title){
 
 function sendWhatsAppAlert(data){
   if(WA_PHONE.includes('YOUR_') || WA_APIKEY.includes('YOUR_')) return;
-  const heading = data._subject.includes('Job Application') ? 'New job application' : 'New website enquiry';
-  const label = data._subject.includes('Job Application') ? 'Position' : 'Service';
+  const heading = data.subject.includes('Job Application') ? 'New job application' : 'New website enquiry';
+  const label = data.subject.includes('Job Application') ? 'Position' : 'Service';
   const text = `${heading}:\nName: ${data.name}\nPhone: ${data.phone}\nEmail: ${data.email}\n${label}: ${data.service}\nOrg/Experience: ${data.organisation}\nMessage: ${data.message}`;
   const url = `https://api.callmebot.com/whatsapp.php?phone=${WA_PHONE}&text=${encodeURIComponent(text)}&apikey=${WA_APIKEY}`;
   fetch(url, {mode:'no-cors'}).catch(()=>{});
@@ -1539,66 +1537,108 @@ function handleSubmit(btn, prefix){
   const orig = btn.textContent;
   const get = id => { const el = document.getElementById(prefix+id); return el ? el.value.trim() : ''; };
 
-  const data = {
+  // 1. Gather base form data
+  const baseData = {
     name: get('name'),
     phone: get('phone'),
     email: get('email'),
     service: get('service'),
     organisation: get('org'),
-    message: get('message'),
-    _subject: prefix === 'f3-'
-      ? 'New Job Application — Czar Consultancy Careers'
-      : 'New Enquiry — Czar Consultancy Website'
+    message: get('message')
   };
 
-  if(!data.name || !data.phone){
+  const subjectLine = prefix === 'f3-'
+    ? 'New Job Application — Czar Consultancy Careers'
+    : 'New Enquiry — Czar Consultancy Website';
+
+  // Validation
+  if(!baseData.name || !baseData.phone){
     btn.textContent='Please fill in your name & phone';
     btn.style.background='#b91c1c';
     setTimeout(()=>{btn.textContent=orig;btn.style.background='';},2500);
     return;
   }
 
-  sendWhatsAppAlert(data);
+  // 2. Prepare specific payloads for each backend
+  
+  // TWEAK 1: We added `from_name` and `replyto` to help Web3Forms process the email correctly
+  const web3FormData = {
+    ...baseData,
+    access_key: WEB3FORMS_ACCESS_KEY,
+    subject: subjectLine,
+    from_name: "Czar Website Form",
+    replyto: baseData.email || "no-reply@czarconsultancy.com"
+  };
 
-  if(FORM_ENDPOINT.includes('YOUR_FORM_ID')){
-    console.warn('Set FORM_ENDPOINT in the script to your real Formspree endpoint to enable live email delivery.');
-    btn.textContent='✓ Thank you! We\'ll be in touch within 24 hours.';
-    btn.style.background='#166534';
-    setTimeout(()=>{btn.textContent=orig;btn.style.background='';},4000);
-    return;
-  }
+  const formspreeData = {
+    ...baseData,
+    _subject: subjectLine
+  };
+
+  // Trigger WhatsApp ping (will silently skip if not configured)
+  sendWhatsAppAlert(web3FormData);
 
   btn.disabled = true;
   btn.textContent = 'Sending…';
 
-  fetch(FORM_ENDPOINT, {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Accept':'application/json'},
-    body: JSON.stringify(data)
-  })
-  .then(res => {
-    if(res.ok){
-      btn.textContent='✓ Thank you! We\'ll be in touch within 24 hours.';
-      btn.style.background='#166534';
-      ['name','phone','email','service','org','message'].forEach(id=>{
-        const el = document.getElementById(prefix+id);
-        if(el) el.value='';
-      });
-    } else {
-      btn.textContent='Something went wrong — please call us instead.';
-      btn.style.background='#b91c1c';
-    }
-  })
-  .catch(()=>{
-    btn.textContent='Network error — please call us instead.';
-    btn.style.background='#b91c1c';
-  })
-  .finally(()=>{
-    btn.disabled = false;
-    setTimeout(()=>{btn.textContent=orig;btn.style.background='';},4000);
+  // 3. Create both fetch requests
+  const reqWeb3Forms = fetch(WEB3FORMS_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify(web3FormData)
   });
+
+  const reqFormspree = fetch(FORMSPREE_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify(formspreeData)
+  });
+
+  // 4. Fire both requests simultaneously
+  Promise.all([reqWeb3Forms, reqFormspree])
+    .then(async (responses) => {
+      const resWeb3 = responses[0];
+      const resFormspree = responses[1];
+      
+      // TWEAK 2: Added console logging specifically for Web3Forms to figure out why it's failing
+      let web3Json = {};
+      try { web3Json = await resWeb3.json(); } catch(e){}
+      
+      if(resWeb3.status !== 200) {
+        console.warn('Web3Forms Error:', web3Json);
+      } else {
+        console.log('Web3Forms Success!', web3Json);
+      }
+
+      // If either one succeeds, we consider it a success for the user
+      if(resWeb3.status === 200 || resFormspree.ok){
+        btn.textContent='✓ Thank you! We\'ll be in touch within 24 hours.';
+        btn.style.background='#166534'; // Green success color
+        
+        // Clear form fields
+        ['name','phone','email','service','org','message'].forEach(id=>{
+          const el = document.getElementById(prefix+id);
+          if(el) el.value='';
+        });
+      } else {
+        btn.textContent='Something went wrong — please call us instead.';
+        btn.style.background='#b91c1c'; // Red error color
+      }
+    })
+    .catch((error)=>{
+      console.log('Fetch error:', error);
+      btn.textContent='Network error — please call us instead.';
+      btn.style.background='#b91c1c';
+    })
+    .finally(()=>{
+      btn.disabled = false;
+      setTimeout(()=>{btn.textContent=orig;btn.style.background='';},4000);
+    });
 }
 
 </script>
 </body>
 </html>
+
+
+```
